@@ -27,32 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <unistd.h>
+#include <vector>
+#include "LMSensor.hpp"
+#include "lm_sensors/SensorList.h"
 
-#include "LMSensorList.hpp"
+namespace lm_sensors {
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "lm_sensors");
-    ros::NodeHandle nh;
-    diagnostic_updater::Updater updater;
+class LMSensorList {
+    public:
+        typedef std::vector<LMSensor *>::const_iterator const_iterator;
+        typedef std::vector<LMSensor *>::iterator iterator;;
 
-    char hostname[HOST_NAME_MAX];
-    int r = gethostname(hostname, HOST_NAME_MAX-1);
-    if (r)
-        updater.setHardwareID("unknown");
-    else
-        updater.setHardwareID(hostname);
+        /*
+         * Constructor.  Calls sensors_init() and create a LMSensor
+         * for each detected sensor on the system.
+         */
+        explicit LMSensorList();
 
-    lm_sensors::LMSensorList sensors;
-    for (lm_sensors::LMSensorList::const_iterator it = sensors.begin(); it != sensors.end(); ++it)
-        updater.add((*it)->label(), *it, &lm_sensors::LMSensor::ros_update);
+        /*
+         * Destructor.  Calls sensors_cleanup() once all created
+         * LMSensors are destroyed.
+         */
+        ~LMSensorList();
 
-    while (nh.ok()) {
-        ros::Duration(1).sleep();
-        updater.update();
-    }
+        /* 
+         * Read latest values from all sensors
+         */
+        void update();
 
-    return 0;
-}
+        /*
+         * @returns -   a const iterator to the beginning of the sensor list
+         */
+        const_iterator begin() const;
 
+        /*
+         * @returns -   a const iterator to the end of the sensor list
+         */
+        const_iterator end() const;
+
+        SensorList toRosMessage() const ;
+
+    private:
+        std::vector<LMSensor *>  m_sensors;
+};
+
+} // namespace lm_sensors

@@ -1,0 +1,17 @@
+<package>
+  <description brief="lm_sensors">
+
+     lm_sensors
+
+  </description>
+  <author>Cedric Pradalier</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/lm_sensors</url>
+  <depend package="roscpp"/>
+  <depend package="diagnostic_updater"/>
+  <depend package="diagnostic_msgs"/>
+
+</package>
+
+

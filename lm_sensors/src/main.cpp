@@ -27,48 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "LMSensorList.hpp"
+#include <unistd.h>
 
-namespace lm_sensors {
+#include <ros/ros.h>
+#include "lm_sensors/LMSensorList.hpp"
+#include "lm_sensors/SensorList.h"
 
-LMSensorList::LMSensorList()
+int main(int argc, char **argv)
 {
-    sensors_init(NULL);
-    int sensor_i = 0;
-    const sensors_chip_name *sc;
+    ros::init(argc, argv, "lm_sensors");
+    ros::NodeHandle nh;
+    ros::Publisher pub = nh.advertise<lm_sensors::SensorList>("sensors",1);
+    diagnostic_updater::Updater updater;
 
-    while ((sc = sensors_get_detected_chips(NULL, &sensor_i))) {
-        int feature_i = 0;
-        const sensors_feature *sf;
-        while ((sf = sensors_get_features(sc, &feature_i)))
-        {
-            LMSensor *lms = new LMSensor(sc, sf);
-            m_sensors.push_back(lms);
-        }
+    char hostname[HOST_NAME_MAX];
+    int r = gethostname(hostname, HOST_NAME_MAX-1);
+    if (r)
+        updater.setHardwareID("unknown");
+    else
+        updater.setHardwareID(hostname);
+
+    lm_sensors::LMSensorList sensors;
+    for (lm_sensors::LMSensorList::const_iterator it = sensors.begin(); it != sensors.end(); ++it)
+        updater.add((*it)->label(), *it, &lm_sensors::LMSensor::ros_update);
+
+    ROS_INFO("Starting lm_sensor monitor");
+    while (nh.ok()) {
+        ros::Duration(1).sleep();
+        updater.update();
+        pub.publish(sensors.toRosMessage());
     }
+
+    return 0;
 }
 
-LMSensorList::~LMSensorList()
-{
-    for (LMSensorList::iterator it = m_sensors.begin(); it != m_sensors.end(); ++it)
-        delete *it;
-    sensors_cleanup();
-}
-
-void LMSensorList::update()
-{
-    for (LMSensorList::iterator it = m_sensors.begin(); it != m_sensors.end(); ++it)
-        (*it)->update();
-} 
-
-LMSensorList::const_iterator LMSensorList::begin() const
-{
-    return m_sensors.begin();
-}
-
-LMSensorList::const_iterator LMSensorList::end() const
-{
-    return m_sensors.end();
-}
-
-} // namespace lm_sensors

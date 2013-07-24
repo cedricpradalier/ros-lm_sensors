@@ -35,6 +35,8 @@
 
 #include <diagnostic_updater/diagnostic_updater.h>
 
+#include "lm_sensors/Sensor.h"
+
 namespace lm_sensors {
 
 #define err(fmt...) fprintf(stderr, fmt);
@@ -84,6 +86,8 @@ class LMSensor {
          * Update the ROS diagnostics.
          */
         void ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw);
+
+        Sensor toRosMessage() const ;
 
     private:
         sensors_chip_name   m_name;

@@ -27,45 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "LMSensor.hpp"
-#include <vector>
+#include "lm_sensors/LMSensorList.hpp"
 
 namespace lm_sensors {
 
-class LMSensorList {
-    public:
-        typedef std::vector<LMSensor *>::const_iterator const_iterator;
-        typedef std::vector<LMSensor *>::iterator iterator;;
+    LMSensorList::LMSensorList()
+    {
+        sensors_init(NULL);
+        int sensor_i = 0;
+        const sensors_chip_name *sc;
 
-        /*
-         * Constructor.  Calls sensors_init() and create a LMSensor
-         * for each detected sensor on the system.
-         */
-        explicit LMSensorList();
+        while ((sc = sensors_get_detected_chips(NULL, &sensor_i))) {
+            int feature_i = 0;
+            const sensors_feature *sf;
+            while ((sf = sensors_get_features(sc, &feature_i)))
+            {
+                LMSensor *lms = new LMSensor(sc, sf);
+                m_sensors.push_back(lms);
+            }
+        }
+    }
 
-        /*
-         * Destructor.  Calls sensors_cleanup() once all created
-         * LMSensors are destroyed.
-         */
-        ~LMSensorList();
+    LMSensorList::~LMSensorList()
+    {
+        for (LMSensorList::iterator it = m_sensors.begin(); it != m_sensors.end(); ++it)
+            delete *it;
+        sensors_cleanup();
+    }
 
-        /* 
-         * Read latest values from all sensors
-         */
-        void update();
+    void LMSensorList::update()
+    {
+        for (LMSensorList::iterator it = m_sensors.begin(); it != m_sensors.end(); ++it)
+            (*it)->update();
+    } 
 
-        /*
-         * @returns -   a const iterator to the beginning of the sensor list
-         */
-        const_iterator begin() const;
+    LMSensorList::const_iterator LMSensorList::begin() const
+    {
+        return m_sensors.begin();
+    }
 
-        /*
-         * @returns -   a const iterator to the end of the sensor list
-         */
-        const_iterator end() const;
+    LMSensorList::const_iterator LMSensorList::end() const
+    {
+        return m_sensors.end();
+    }
 
-    private:
-        std::vector<LMSensor *>  m_sensors;
-};
+    SensorList LMSensorList::toRosMessage() const {
+        SensorList list;
+        list.header.stamp = ros::Time::now();
+        list.header.frame_id = "not_applicable";
+        for (LMSensorList::const_iterator it = m_sensors.begin(); it != m_sensors.end(); ++it) {
+            list.sensors.push_back((*it)->toRosMessage());
+        }
+        return list;
+    }
 
 } // namespace lm_sensors
