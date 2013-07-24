@@ -36,7 +36,7 @@
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "lm_sensors");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
     ros::Publisher pub = nh.advertise<lm_sensors::SensorList>("sensors",1);
     diagnostic_updater::Updater updater;
 
