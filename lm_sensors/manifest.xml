@@ -4,7 +4,7 @@
      lm_sensors
 
   </description>
-  <author>Cedric Pradalier</author>
+  <author>JSBronder, updated by Cedric Pradalier</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/lm_sensors</url>
